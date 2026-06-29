@@ -8,7 +8,7 @@ export default function TabLayout() {
         <Tabs
             screenOptions={{
                 headerShown: false, // The drawer navigator will provide the header
-                tabBarActiveTintColor: 'blue',
+                tabBarActiveTintColor: '#2563EB',
                 tabBarInactiveTintColor: '#888',
                 tabBarStyle: {
                     borderTopWidth: 1,
@@ -44,7 +44,7 @@ export default function TabLayout() {
             <Tabs.Screen
                 name="load-management"
                 options={{
-                    title: 'Load Manage',
+                    title: 'Load Management',
                     tabBarIcon: ({ color, size }) => <Ionicons name="git-pull-request-outline" size={size} color={color} />,
                 }}
             />

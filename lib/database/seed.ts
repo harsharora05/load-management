@@ -1,6 +1,8 @@
 import inventoryRepository from "./repositories/InventoryRepository";
 import journeyRepository from "./repositories/JourneyRepository";
+import requestRepository from "./repositories/RequestRepository";
 import userRepository from "./repositories/UserRepository";
+import warehouseRepository from "./repositories/WarehouseRepository";
 
 export async function seedDatabase() {
     // Seed Users and Journeys
@@ -65,14 +67,43 @@ export async function seedDatabase() {
         console.log("Database seeded with users and journeys.");
     }
 
-    // Seed Inventory
-    const inventoryItems = await inventoryRepository.getAll();
-    if (inventoryItems.length === 0) { // Only seed if inventory table is empty
-        console.log("Seeding inventory...");
-        await inventoryRepository.create({ name: "Cement Bags (50kg)", sku: "CEM-50KG", quantity: 200, price: 350.50 });
-        await inventoryRepository.create({ name: "Steel Rods (12mm)", sku: "STL-12MM", quantity: 500, price: 65.00 });
-        await inventoryRepository.create({ name: "Bricks (Red Clay)", sku: "BRK-RED", quantity: 10000, price: 8.75 });
-        await inventoryRepository.create({ name: "Sand (per Tonne)", sku: "SND-TNE", quantity: 50, price: 1200.00 });
-        console.log("Database seeded with inventory items.");
+    // Seed Warehouses
+    const warehouses = await warehouseRepository.getAll();
+    if (warehouses.length === 0) {
+        console.log("Seeding warehouses...");
+        const centralWarehouse = await warehouseRepository.create({ name: "Central Warehouse", location: "Delhi" });
+        const northWarehouse = await warehouseRepository.create({ name: "North Region Hub", location: "Chandigarh" });
+        await warehouseRepository.create({ name: "West Region Hub", location: "Mumbai" });
+
+        console.log("Seeding inventory for warehouses...");
+        // Central Warehouse Inventory
+        await inventoryRepository.create({ name: "Cement Bags (50kg)", sku: "CEM-50KG-DEL", price: 350.50, quantity: 150, warehouseId: centralWarehouse.id });
+        await inventoryRepository.create({ name: "Steel Rods (12mm)", sku: "STL-12MM-DEL", price: 65.00, quantity: 300, warehouseId: centralWarehouse.id });
+
+        // North Region Hub Inventory
+        await inventoryRepository.create({ name: "Cement Bags (50kg)", sku: "CEM-50KG-CHD", price: 360.00, quantity: 50, warehouseId: northWarehouse.id });
+        await inventoryRepository.create({ name: "Bricks (Red Clay)", sku: "BRK-RED-CHD", price: 8.75, quantity: 8000, warehouseId: northWarehouse.id });
+
+        console.log("Database seeded with warehouses and inventory.");
+    }
+
+    // Seed Requests
+    const requests = await requestRepository.getAllWithInventoryDetails();
+    if (requests.length === 0) {
+        console.log("Seeding requests...");
+        const allInventory = await inventoryRepository.getAll();
+        const allWarehouses = await warehouseRepository.getAll();
+
+        const cementDelhi = allInventory.find(i => i.sku === 'CEM-50KG-DEL');
+        const bricksChandigarh = allInventory.find(i => i.sku === 'BRK-RED-CHD');
+        const westWarehouse = allWarehouses.find(w => w.name === 'West Region Hub');
+
+        if (cementDelhi && bricksChandigarh && westWarehouse) {
+            // Create a pending request
+            await requestRepository.create({ inventoryId: cementDelhi.id, warehouseId: westWarehouse.id, quantity: 20 });
+            // Create another pending request
+            await requestRepository.create({ inventoryId: bricksChandigarh.id, warehouseId: westWarehouse.id, quantity: 500 });
+        }
+        console.log("Database seeded with initial requests.");
     }
 }

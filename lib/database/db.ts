@@ -27,7 +27,7 @@ class DatabaseService {
         if (this.isInitialized()) return;
 
         try {
-            this.db = await SQLite.openDatabaseAsync("loadmanagement.db");
+            this.db = await SQLite.openDatabaseAsync("loadmanagement.v2.db");
 
             await this.db.execAsync("PRAGMA foreign_keys = ON;");
             await this.db.execAsync(CREATE_TABLES_SQL);

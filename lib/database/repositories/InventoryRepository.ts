@@ -27,8 +27,8 @@ class InventoryRepository {
         };
 
         await db.run(
-            `INSERT INTO inventory (id, name, sku, quantity, price, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
-            [item.id, item.name, item.sku, item.quantity, item.price, item.createdAt]
+            `INSERT INTO inventory (id, name, sku, price, createdAt, warehouseId, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [item.id, item.name, item.sku, item.price, item.createdAt, item.warehouseId, item.quantity]
         );
 
         return item;

@@ -193,6 +193,13 @@ export default function RequestsScreen() {
                                     SKU • {item.itemSku}
                                 </Text>
                             </View>
+                        </View>
+
+                        <View style={styles.divider} />
+
+                        <View style={styles.cardMiddle}>
+                            <Text style={styles.warehouseLabel}>For Warehouse</Text>
+                            <Text style={styles.warehouseName}>{item.warehouseName}</Text>
 
                             <View
                                 style={[
@@ -325,6 +332,23 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
 
+    cardMiddle: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+
+    warehouseLabel: {
+        fontSize: 14,
+        color: "#64748B",
+        fontWeight: "500",
+    },
+
+    warehouseName: {
+        fontSize: 14,
+        color: "#1E293B",
+        fontWeight: "600",
+    },
     cardTop: {
         flexDirection: "row",
         alignItems: "center",

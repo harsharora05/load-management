@@ -7,5 +7,6 @@ export { default as inventoryRepository } from './repositories/InventoryReposito
 export { default as journeyRepository } from "./repositories/JourneyRepository";
 export { default as requestRepository } from './repositories/RequestRepository';
 export { default as userRepository } from './repositories/UserRepository';
+export { default as warehouseRepository } from './repositories/WarehouseRepository';
 export * from './schema';
 

@@ -28,8 +28,8 @@ class RequestRepository {
         };
 
         await db.run(
-            `INSERT INTO requests (id, inventoryId, quantity, status, createdAt) VALUES (?, ?, ?, ?, ?)`,
-            [request.id, request.inventoryId, request.quantity, request.status, request.createdAt]
+            `INSERT INTO requests (id, inventoryId, warehouseId, quantity, status, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
+            [request.id, request.inventoryId, request.warehouseId, request.quantity, request.status, request.createdAt]
         );
 
         return request;
@@ -38,14 +38,16 @@ class RequestRepository {
     /**
      * Get all requests with inventory item details
      */
-    async getAllWithInventoryDetails(): Promise<(Request & { itemName: string; itemSku: string; })[]> {
+    async getAllWithInventoryDetails(): Promise<(Request & { itemName: string; itemSku: string; warehouseName: string; })[]> {
         return await db.all<any>(
             `SELECT
                 r.*,
                 i.name as itemName,
-                i.sku as itemSku
+                i.sku as itemSku,
+                w.name as warehouseName
              FROM requests r
              JOIN inventory i ON r.inventoryId = i.id
+             JOIN warehouses w ON r.warehouseId = w.id
              ORDER BY r.createdAt DESC`
         );
     }

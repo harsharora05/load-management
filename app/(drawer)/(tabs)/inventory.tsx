@@ -1,4 +1,4 @@
-import { Inventory, inventoryRepository } from "@/lib/database";
+import { Warehouse, warehouseRepository } from "@/lib/database";
 import { Ionicons } from "@expo/vector-icons";
 import { DrawerToggleButton } from "@react-navigation/drawer";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
@@ -10,12 +10,12 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function InventoryScreen() {
-    const [inventory, setInventory] = useState<Inventory[]>([]);
+    const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -23,16 +23,16 @@ export default function InventoryScreen() {
 
     useFocusEffect(
         useCallback(() => {
-            loadInventory();
+            loadWarehouses();
         }, [])
     );
 
-    async function loadInventory() {
+    async function loadWarehouses() {
         try {
-            const data = await inventoryRepository.getAll();
-            setInventory(data);
+            const data = await warehouseRepository.getAll();
+            setWarehouses(data);
         } catch (error) {
-            console.error("Failed to load inventory", error);
+            console.error("Failed to load warehouses", error);
         } finally {
             setIsLoading(false);
         }
@@ -40,19 +40,24 @@ export default function InventoryScreen() {
 
     async function onRefresh() {
         setRefreshing(true);
-        await loadInventory();
+        await loadWarehouses();
         setRefreshing(false);
     }
 
     if (isLoading) {
         return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#2563EB" />
-                <Text style={styles.loadingText}>Loading inventory...</Text>
-            </View>
+            <SafeAreaView style={styles.centered}>
+                <ActivityIndicator
+                    size="large"
+                    color="#2563EB"
+                />
+
+                <Text style={styles.loadingText}>
+                    Loading warehouses...
+                </Text>
+            </SafeAreaView>
         );
     }
-
     return (
         <SafeAreaView
             style={styles.container}
@@ -65,25 +70,25 @@ export default function InventoryScreen() {
                 }}
             />
 
-            {inventory.length === 0 ? (
+            {warehouses.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <Ionicons
-                        name="cube-outline"
+                        name="business-outline"
                         size={90}
                         color="#BFDBFE"
                     />
 
                     <Text style={styles.emptyTitle}>
-                        No Inventory Found
+                        No Warehouses Found
                     </Text>
 
                     <Text style={styles.emptySubtitle}>
-                        Inventory items will appear here.
+                        Your company's warehouses will appear here.
                     </Text>
                 </View>
             ) : (
                 <FlatList
-                    data={inventory}
+                    data={warehouses}
                     keyExtractor={(item) => item.id}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
@@ -98,16 +103,14 @@ export default function InventoryScreen() {
                     renderItem={({ item }) => (
                         <TouchableOpacity
                             style={styles.card}
-                            activeOpacity={0.85}
-                            onPress={() =>
-                                router.push(`/inventory/${item.id}`)
-                            }
+                            activeOpacity={0.9}
+                            onPress={() => router.push(`/inventory/${item.id}?name=${item.name}`)}
                         >
                             <View style={styles.topRow}>
                                 <View style={styles.iconContainer}>
                                     <Ionicons
-                                        name="cube-outline"
-                                        size={24}
+                                        name="business-outline"
+                                        size={26}
                                         color="#2563EB"
                                     />
                                 </View>
@@ -118,7 +121,7 @@ export default function InventoryScreen() {
                                     </Text>
 
                                     <Text style={styles.itemSku}>
-                                        SKU • {item.sku}
+                                        {item.location}
                                     </Text>
                                 </View>
 
@@ -127,32 +130,6 @@ export default function InventoryScreen() {
                                     size={22}
                                     color="#94A3B8"
                                 />
-                            </View>
-
-                            <View style={styles.divider} />
-
-                            <View style={styles.bottomRow}>
-                                <View style={styles.infoBox}>
-                                    <Text style={styles.label}>
-                                        Quantity
-                                    </Text>
-
-                                    <Text style={styles.value}>
-                                        {item.quantity}
-                                    </Text>
-                                </View>
-
-                                <View style={styles.infoBox}>
-                                    <Text style={styles.label}>
-                                        Price
-                                    </Text>
-
-                                    <Text style={styles.value}>
-                                        {item.price
-                                            ? `₹${item.price.toFixed(2)}`
-                                            : "N/A"}
-                                    </Text>
-                                </View>
                             </View>
                         </TouchableOpacity>
                     )}
@@ -174,12 +151,13 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+        backgroundColor: "#EEF4FF",
     },
 
     loadingText: {
-        marginTop: 12,
-        color: "#64748B",
+        marginTop: 14,
         fontSize: 15,
+        color: "#64748B",
     },
 
     emptyContainer: {
@@ -190,17 +168,17 @@ const styles = StyleSheet.create({
     },
 
     emptyTitle: {
-        fontSize: 22,
+        marginTop: 20,
+        fontSize: 24,
         fontWeight: "700",
         color: "#1E3A8A",
-        marginTop: 20,
     },
 
     emptySubtitle: {
         marginTop: 8,
+        fontSize: 15,
         color: "#64748B",
         textAlign: "center",
-        fontSize: 15,
     },
 
     listContent: {
@@ -210,19 +188,19 @@ const styles = StyleSheet.create({
 
     card: {
         backgroundColor: "#FFFFFF",
-        borderRadius: 22,
+        borderRadius: 20,
         padding: 18,
         marginBottom: 18,
 
-        shadowColor: PRIMARY,
+        shadowColor: "#2563EB",
         shadowOffset: {
             width: 0,
-            height: 6,
+            height: 4,
         },
         shadowOpacity: 0.08,
-        shadowRadius: 10,
+        shadowRadius: 8,
 
-        elevation: 5,
+        elevation: 4,
     },
 
     topRow: {
@@ -231,9 +209,9 @@ const styles = StyleSheet.create({
     },
 
     iconContainer: {
-        width: 54,
-        height: 54,
-        borderRadius: 15,
+        width: 56,
+        height: 56,
+        borderRadius: 16,
         backgroundColor: "#DBEAFE",
         justifyContent: "center",
         alignItems: "center",
@@ -241,7 +219,7 @@ const styles = StyleSheet.create({
 
     itemInfo: {
         flex: 1,
-        marginLeft: 14,
+        marginLeft: 16,
     },
 
     itemName: {
@@ -252,8 +230,8 @@ const styles = StyleSheet.create({
 
     itemSku: {
         marginTop: 4,
-        color: "#64748B",
         fontSize: 13,
+        color: "#64748B",
     },
 
     divider: {
@@ -270,16 +248,16 @@ const styles = StyleSheet.create({
 
     infoBox: {
         flex: 1,
-        backgroundColor: "#F8FAFC",
+        backgroundColor: "#EFF6FF",
         borderRadius: 14,
         paddingVertical: 14,
         alignItems: "center",
     },
 
     label: {
-        color: "#94A3B8",
         fontSize: 12,
         fontWeight: "700",
+        color: "#94A3B8",
         textTransform: "uppercase",
     },
 
