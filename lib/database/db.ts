@@ -1,9 +1,9 @@
 /**
  * Core Database Service
- * Minimal SQLite wrapper
+ * SQLite wrapper for Expo
  */
 
-import * as SQLite from 'expo-sqlite';
+import * as SQLite from "expo-sqlite";
 import { CREATE_TABLES_SQL } from './schema';
 
 class DatabaseService {
@@ -16,52 +16,71 @@ class DatabaseService {
         if (!DatabaseService.instance) {
             DatabaseService.instance = new DatabaseService();
         }
+
         return DatabaseService.instance;
     }
 
     /**
-     * Initialize database and create tables
+     * Initialize database
      */
     async initialize(): Promise<void> {
+        if (this.isInitialized()) return;
+
         try {
-            this.db = await SQLite.openDatabaseAsync('loadmanagement.db');
+            this.db = await SQLite.openDatabaseAsync("loadmanagement.db");
 
-            // Enable foreign keys
-            await this.db.execAsync('PRAGMA foreign_keys = ON;');
-
-            // Create tables
+            await this.db.execAsync("PRAGMA foreign_keys = ON;");
             await this.db.execAsync(CREATE_TABLES_SQL);
 
-            console.log('[DB] Database initialized');
+            console.log("[DB] Database initialized successfully.");
         } catch (error) {
-            console.error('[DB] Error initializing database:', error);
+            console.error("[DB] Failed to initialize database:", error);
             throw error;
         }
     }
 
     /**
-     * Execute a query
+     * Ensure database has been initialized
      */
-    async run(sql: string, params: any[] = []): Promise<SQLite.SQLiteRunResult> {
-        if (!this.db) throw new Error('Database not initialized');
+    private get database(): SQLite.SQLiteDatabase {
+        if (!this.db) {
+            throw new Error(
+                "Database not initialized. Call db.initialize() before using the database."
+            );
+        }
+
+        return this.db;
+    }
+
+    /**
+     * Execute INSERT / UPDATE / DELETE
+     */
+    async run(
+        sql: string,
+        params: SQLite.SQLiteBindParams = []
+    ): Promise<SQLite.SQLiteRunResult> {
         try {
-            return await this.db.runAsync(sql, params);
+            return await this.database.runAsync(sql, params);
         } catch (error) {
-            console.error('[DB] Error running query:', error);
+            console.error("[DB] Run Error:", error);
+            console.error(sql);
             throw error;
         }
     }
 
     /**
-     * Get a single row
+     * Get first row
      */
-    async get<T>(sql: string, params: any[] = []): Promise<T | null> {
-        if (!this.db) throw new Error('Database not initialized');
+    async get<T>(
+        sql: string,
+        params: SQLite.SQLiteBindParams = []
+    ): Promise<T | null> {
         try {
-            const result = await this.db.getFirstAsync<T>(sql, params);
-            return result || null;
+            const result = await this.database.getFirstAsync<T>(sql, params);
+            return result ?? null;
         } catch (error) {
-            console.error('[DB] Error getting row:', error);
+            console.error("[DB] Get Error:", error);
+            console.error(sql);
             throw error;
         }
     }
@@ -69,12 +88,27 @@ class DatabaseService {
     /**
      * Get all rows
      */
-    async all<T>(sql: string, params: any[] = []): Promise<T[]> {
-        if (!this.db) throw new Error('Database not initialized');
+    async all<T>(
+        sql: string,
+        params: SQLite.SQLiteBindParams = []
+    ): Promise<T[]> {
         try {
-            return await this.db.getAllAsync<T>(sql, params);
+            return await this.database.getAllAsync<T>(sql, params);
         } catch (error) {
-            console.error('[DB] Error getting rows:', error);
+            console.error("[DB] All Error:", error);
+            console.error(sql);
+            throw error;
+        }
+    }
+
+    /**
+     * Execute raw SQL (CREATE TABLE, PRAGMA, etc.)
+     */
+    async exec(sql: string): Promise<void> {
+        try {
+            await this.database.execAsync(sql);
+        } catch (error) {
+            console.error("[DB] Exec Error:", error);
             throw error;
         }
     }
@@ -83,35 +117,42 @@ class DatabaseService {
      * Begin transaction
      */
     async beginTransaction(): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-        await this.db.execAsync('BEGIN TRANSACTION;');
+        await this.exec("BEGIN TRANSACTION;");
     }
 
     /**
      * Commit transaction
      */
     async commit(): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-        await this.db.execAsync('COMMIT;');
+        await this.exec("COMMIT;");
     }
 
     /**
      * Rollback transaction
      */
     async rollback(): Promise<void> {
-        if (!this.db) throw new Error('Database not initialized');
-        await this.db.execAsync('ROLLBACK;');
+        await this.exec("ROLLBACK;");
     }
 
     /**
-     * Close database connection
+     * Close database
      */
     async close(): Promise<void> {
         if (this.db) {
             await this.db.closeAsync();
             this.db = null;
+            console.log("[DB] Database closed.");
         }
+    }
+
+    /**
+     * Check if initialized
+     */
+    isInitialized(): boolean {
+        return this.db !== null;
     }
 }
 
-export default DatabaseService.getInstance();
+const db = DatabaseService.getInstance();
+
+export default db;

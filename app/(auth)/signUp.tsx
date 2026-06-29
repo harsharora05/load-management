@@ -1,59 +1,94 @@
-import { useAuth } from '@/lib/context/AuthContext';
-import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from "@/lib/context/AuthContext";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignUpScreen() {
     const router = useRouter();
-    const { signUp, isLoading: authLoading } = useAuth();
+    const { signUp } = useAuth();
 
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        password: '',
-        confirmPassword: '',
-    });
-
-    const [errors, setErrors] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(false);
 
-    const validateForm = (): boolean => {
-        const newErrors: Record<string, string> = {};
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] =
+        useState(false);
 
-        if (!formData.name.trim()) {
-            newErrors.name = 'Name is required';
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        phone: "",
+        password: "",
+        confirmPassword: "",
+    });
+
+    const [errors, setErrors] = useState<Record<string, string>>(
+        {}
+    );
+
+    const handleInputChange = (
+        field: string,
+        value: string
+    ) => {
+        setFormData((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+
+        if (errors[field]) {
+            setErrors((prev) => ({
+                ...prev,
+                [field]: "",
+            }));
         }
-        if (!formData.email.trim()) {
-            newErrors.email = 'Email is required';
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = 'Please enter a valid email';
-        }
-        if (!formData.phone.trim()) {
-            newErrors.phone = 'Phone number is required';
-        }
-        if (!formData.password) {
-            newErrors.password = 'Password is required';
-        } else if (formData.password.length < 6) {
-            newErrors.password = 'Password must be at least 6 characters';
-        }
-        if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Passwords do not match';
+    };
+
+    const validate = () => {
+        const err: Record<string, string> = {};
+
+        if (!formData.name.trim())
+            err.name = "Name is required";
+
+        if (!formData.email.trim())
+            err.email = "Email is required";
+
+        if (!formData.phone.trim())
+            err.phone = "Phone number is required";
+
+        if (!formData.password)
+            err.password = "Password is required";
+
+        if (
+            formData.password !==
+            formData.confirmPassword
+        ) {
+            err.confirmPassword =
+                "Passwords do not match";
         }
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+        setErrors(err);
+
+        return Object.keys(err).length === 0;
     };
 
     const handleSignUp = async () => {
-        if (!validateForm()) {
-            return;
-        }
+        if (!validate()) return;
 
         try {
             setLoading(true);
-            // Use AuthContext to sign up and persist session
+
             await signUp(
                 formData.name,
                 formData.email,
@@ -61,141 +96,362 @@ export default function SignUpScreen() {
                 formData.phone
             );
 
-            Alert.alert('Success', 'Account created successfully!', [
-                {
-                    text: 'OK',
-                    onPress: () => {
-                        // Auto-navigate to main app
-                        router.replace('/(tabs)/Dashboard');
+            Alert.alert(
+                "Success",
+                "Account created successfully!",
+                [
+                    {
+                        text: "OK",
+                        onPress: () =>
+                            router.replace(
+                                "/(drawer)/(tabs)/Dashboard"
+                            ),
                     },
-                },
-            ]);
-        } catch (err) {
-            Alert.alert('Error', String(err) || 'Failed to create account. Please try again.');
+                ]
+            );
+        } catch {
+            Alert.alert(
+                "Error",
+                "Unable to create account."
+            );
         } finally {
             setLoading(false);
         }
     };
 
-    const handleInputChange = (field: string, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value,
-        }));
-        // Clear error for this field when user starts typing
-        if (errors[field]) {
-            setErrors(prev => ({
-                ...prev,
-                [field]: '',
-            }));
-        }
-    };
-
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-                <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+        <SafeAreaView style={styles.container}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={
+                    Platform.OS === "ios"
+                        ? "padding"
+                        : undefined
+                }
+            >
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={styles.scroll}
+                >
                     {/* Header */}
-                    <View style={styles.headerContainer}>
-                        <Text style={styles.title}>Create Account</Text>
-                        <Text style={styles.subtitle}>Sign up to get started</Text>
-                    </View>
 
-                    {/* Form Container */}
-                    <View style={styles.formContainer}>
-                        {/* Name Field */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.label}>Full Name</Text>
-                            <TextInput
-                                style={[styles.input, errors.name && styles.inputError]}
-                                placeholder="Enter your full name"
-                                placeholderTextColor="#999"
-                                value={formData.name}
-                                onChangeText={value => handleInputChange('name', value)}
-                                editable={!loading}
+                    <View style={styles.header}>
+                        <View style={styles.logo}>
+                            <Ionicons
+                                name="person-add"
+                                size={42}
+                                color="#2563EB"
                             />
-                            {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
                         </View>
 
-                        {/* Email Field */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.label}>Email Address</Text>
+                        <Text style={styles.appName}>
+                            Load Management
+                        </Text>
+
+                        <Text style={styles.welcome}>
+                            Create Account
+                        </Text>
+
+                        <Text style={styles.subTitle}>
+                            Create your account to continue
+                        </Text>
+                    </View>
+
+                    {/* Card */}
+
+                    <View style={styles.card}>
+                        {/* Name */}
+
+                        <Text style={styles.label}>
+                            Full Name
+                        </Text>
+
+                        <View
+                            style={[
+                                styles.inputContainer,
+                                errors.name &&
+                                styles.inputError,
+                            ]}
+                        >
+                            <Ionicons
+                                name="person-outline"
+                                size={20}
+                                color="#64748B"
+                            />
+
                             <TextInput
-                                style={[styles.input, errors.email && styles.inputError]}
+                                style={styles.input}
+                                placeholder="Enter your name"
+                                placeholderTextColor="#94A3B8"
+                                value={formData.name}
+                                onChangeText={(text) =>
+                                    handleInputChange(
+                                        "name",
+                                        text
+                                    )
+                                }
+                            />
+                        </View>
+
+                        {errors.name && (
+                            <Text style={styles.error}>
+                                {errors.name}
+                            </Text>
+                        )}
+
+                        {/* Email */}
+
+                        <Text
+                            style={[
+                                styles.label,
+                                { marginTop: 18 },
+                            ]}
+                        >
+                            Email
+                        </Text>
+
+                        <View
+                            style={[
+                                styles.inputContainer,
+                                errors.email &&
+                                styles.inputError,
+                            ]}
+                        >
+                            <Ionicons
+                                name="mail-outline"
+                                size={20}
+                                color="#64748B"
+                            />
+
+                            <TextInput
+                                style={styles.input}
                                 placeholder="Enter your email"
-                                placeholderTextColor="#999"
+                                placeholderTextColor="#94A3B8"
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                                 value={formData.email}
-                                onChangeText={value => handleInputChange('email', value)}
-                                editable={!loading}
+                                onChangeText={(text) =>
+                                    handleInputChange(
+                                        "email",
+                                        text
+                                    )
+                                }
                             />
-                            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
                         </View>
 
-                        {/* Phone Field */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.label}>Phone Number</Text>
+                        {errors.email && (
+                            <Text style={styles.error}>
+                                {errors.email}
+                            </Text>
+                        )}
+
+                        {/* Phone */}
+
+                        <Text
+                            style={[
+                                styles.label,
+                                { marginTop: 18 },
+                            ]}
+                        >
+                            Phone Number
+                        </Text>
+
+                        <View
+                            style={[
+                                styles.inputContainer,
+                                errors.phone &&
+                                styles.inputError,
+                            ]}
+                        >
+                            <Ionicons
+                                name="call-outline"
+                                size={20}
+                                color="#64748B"
+                            />
+
                             <TextInput
-                                style={[styles.input, errors.phone && styles.inputError]}
-                                placeholder="Enter your phone number"
-                                placeholderTextColor="#999"
+                                style={styles.input}
+                                placeholder="Enter phone number"
+                                placeholderTextColor="#94A3B8"
                                 keyboardType="phone-pad"
                                 value={formData.phone}
-                                onChangeText={value => handleInputChange('phone', value)}
-                                editable={!loading}
+                                onChangeText={(text) =>
+                                    handleInputChange(
+                                        "phone",
+                                        text
+                                    )
+                                }
                             />
-                            {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
                         </View>
 
-                        {/* Password Field */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.label}>Password</Text>
+                        {errors.phone && (
+                            <Text style={styles.error}>
+                                {errors.phone}
+                            </Text>
+                        )}
+
+                        {/* Password */}
+
+                        <Text
+                            style={[
+                                styles.label,
+                                { marginTop: 18 },
+                            ]}
+                        >
+                            Password
+                        </Text>
+
+                        <View
+                            style={[
+                                styles.inputContainer,
+                                errors.password &&
+                                styles.inputError,
+                            ]}
+                        >
+                            <Ionicons
+                                name="lock-closed-outline"
+                                size={20}
+                                color="#64748B"
+                            />
+
                             <TextInput
-                                style={[styles.input, errors.password && styles.inputError]}
-                                placeholder="Enter your password"
-                                placeholderTextColor="#999"
-                                secureTextEntry
+                                style={styles.input}
+                                placeholder="Enter password"
+                                placeholderTextColor="#94A3B8"
+                                secureTextEntry={
+                                    !showPassword
+                                }
                                 value={formData.password}
-                                onChangeText={value => handleInputChange('password', value)}
-                                editable={!loading}
+                                onChangeText={(text) =>
+                                    handleInputChange(
+                                        "password",
+                                        text
+                                    )
+                                }
                             />
-                            {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+
+                            <TouchableOpacity
+                                onPress={() =>
+                                    setShowPassword(
+                                        !showPassword
+                                    )
+                                }
+                            >
+                                <Ionicons
+                                    name={
+                                        showPassword
+                                            ? "eye-off-outline"
+                                            : "eye-outline"
+                                    }
+                                    size={22}
+                                    color="#64748B"
+                                />
+                            </TouchableOpacity>
                         </View>
 
-                        {/* Confirm Password Field */}
-                        <View style={styles.fieldContainer}>
-                            <Text style={styles.label}>Confirm Password</Text>
+                        {errors.password && (
+                            <Text style={styles.error}>
+                                {errors.password}
+                            </Text>
+                        )}
+
+                        {/* Confirm Password */}
+
+                        <Text
+                            style={[
+                                styles.label,
+                                { marginTop: 18 },
+                            ]}
+                        >
+                            Confirm Password
+                        </Text>
+
+                        <View
+                            style={[
+                                styles.inputContainer,
+                                errors.confirmPassword &&
+                                styles.inputError,
+                            ]}
+                        >
+                            <Ionicons
+                                name="shield-checkmark-outline"
+                                size={20}
+                                color="#64748B"
+                            />
+
                             <TextInput
-                                style={[styles.input, errors.confirmPassword && styles.inputError]}
-                                placeholder="Confirm your password"
-                                placeholderTextColor="#999"
-                                secureTextEntry
-                                value={formData.confirmPassword}
-                                onChangeText={value => handleInputChange('confirmPassword', value)}
-                                editable={!loading}
+                                style={styles.input}
+                                placeholder="Confirm password"
+                                placeholderTextColor="#94A3B8"
+                                secureTextEntry={
+                                    !showConfirmPassword
+                                }
+                                value={
+                                    formData.confirmPassword
+                                }
+                                onChangeText={(text) =>
+                                    handleInputChange(
+                                        "confirmPassword",
+                                        text
+                                    )
+                                }
                             />
-                            {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+
+                            <TouchableOpacity
+                                onPress={() =>
+                                    setShowConfirmPassword(
+                                        !showConfirmPassword
+                                    )
+                                }
+                            >
+                                <Ionicons
+                                    name={
+                                        showConfirmPassword
+                                            ? "eye-off-outline"
+                                            : "eye-outline"
+                                    }
+                                    size={22}
+                                    color="#64748B"
+                                />
+                            </TouchableOpacity>
                         </View>
 
-                        {/* Sign Up Button */}
+                        {errors.confirmPassword && (
+                            <Text style={styles.error}>
+                                {errors.confirmPassword}
+                            </Text>
+                        )}
+
                         <TouchableOpacity
-                            style={[styles.signUpButton, loading && styles.signUpButtonDisabled]}
+                            style={styles.button}
                             onPress={handleSignUp}
-                            disabled={loading}
                         >
                             {loading ? (
-                                <ActivityIndicator size="small" color="#fff" />
+                                <ActivityIndicator color="#fff" />
                             ) : (
-                                <Text style={styles.signUpButtonText}>Create Account</Text>
+                                <Text
+                                    style={styles.buttonText}
+                                >
+                                    Create Account
+                                </Text>
                             )}
                         </TouchableOpacity>
 
-                        {/* Sign In Link */}
-                        <View style={styles.signInLinkContainer}>
-                            <Text style={styles.signInText}>Already have an account? </Text>
-                            <TouchableOpacity onPress={() => router.push('/(auth)/signIn')}>
-                                <Text style={styles.signInLink}>Sign In</Text>
+                        <View style={styles.footer}>
+                            <Text style={styles.footerText}>
+                                Already have an account?
+                            </Text>
+
+                            <TouchableOpacity
+                                onPress={() =>
+                                    router.push(
+                                        "/(auth)/signIn"
+                                    )
+                                }
+                            >
+                                <Text style={styles.signIn}>
+                                    Sign In
+                                </Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -205,84 +461,165 @@ export default function SignUpScreen() {
     );
 }
 
+const PRIMARY = "#2563EB";
+
 const styles = StyleSheet.create({
-    scrollContainer: {
-        flexGrow: 1,
-        paddingHorizontal: 20,
-        paddingVertical: 20,
-    },
-    headerContainer: {
-        marginBottom: 40,
-        marginTop: 20,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: '700' as const,
-        color: '#000',
-        marginBottom: 8,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: '#666',
-    },
-    formContainer: {
+    container: {
         flex: 1,
+        backgroundColor: "#EEF4FF",
     },
-    fieldContainer: {
-        marginBottom: 20,
+
+    scroll: {
+        flexGrow: 1,
     },
+
+    header: {
+        height: 240,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 30,
+        backgroundColor: PRIMARY,
+    },
+
+    logo: {
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+        backgroundColor: "#FFFFFF",
+        justifyContent: "center",
+        alignItems: "center",
+
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 5,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 8,
+
+        marginBottom: 18,
+    },
+
+    appName: {
+        color: "#FFFFFF",
+        fontSize: 28,
+        fontWeight: "700",
+    },
+
+    welcome: {
+        marginTop: 18,
+        color: "#FFFFFF",
+        fontSize: 24,
+        fontWeight: "700",
+    },
+
+    subTitle: {
+        marginTop: 6,
+        color: "#DBEAFE",
+        fontSize: 15,
+    },
+
+    card: {
+        flex: 1,
+        backgroundColor: "#FFFFFF",
+
+        borderTopLeftRadius: 35,
+        borderTopRightRadius: 35,
+
+        paddingHorizontal: 24,
+        paddingTop: 30,
+        paddingBottom: 40,
+
+        marginTop: -10,
+    },
+
     label: {
         fontSize: 14,
-        fontWeight: '600' as const,
-        color: '#333',
+        fontWeight: "600",
+        color: "#1E293B",
         marginBottom: 8,
     },
-    input: {
+
+    inputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+
+        height: 56,
+
+        backgroundColor: "#F8FAFC",
+
+        borderRadius: 15,
+
         borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
+        borderColor: "#E2E8F0",
+
         paddingHorizontal: 16,
-        paddingVertical: 12,
-        fontSize: 16,
-        color: '#000',
-        backgroundColor: '#f9f9f9',
     },
+
     inputError: {
-        borderColor: '#ff6b6b',
-        backgroundColor: '#fff5f5',
+        borderColor: "#EF4444",
     },
-    errorText: {
-        fontSize: 12,
-        color: '#ff6b6b',
-        marginTop: 4,
-    },
-    signUpButton: {
-        backgroundColor: '#4CAF50',
-        borderRadius: 8,
-        paddingVertical: 14,
-        marginTop: 30,
-        alignItems: 'center' as const,
-    },
-    signUpButtonDisabled: {
-        opacity: 0.6,
-    },
-    signUpButtonText: {
+
+    input: {
+        flex: 1,
+        marginLeft: 10,
         fontSize: 16,
-        fontWeight: '600' as const,
-        color: '#fff',
+        color: "#1E293B",
     },
-    signInLinkContainer: {
-        flexDirection: 'row' as const,
-        justifyContent: 'center',
-        marginTop: 20,
+
+    error: {
+        marginTop: 6,
+        marginLeft: 4,
+        fontSize: 12,
+        color: "#EF4444",
     },
-    signInText: {
-        fontSize: 14,
-        color: '#666',
+
+    button: {
+        height: 56,
+
+        marginTop: 30,
+
+        backgroundColor: PRIMARY,
+
+        borderRadius: 15,
+
+        justifyContent: "center",
+        alignItems: "center",
+
+        shadowColor: PRIMARY,
+        shadowOffset: {
+            width: 0,
+            height: 6,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 6,
     },
-    signInLink: {
-        fontSize: 14,
-        color: '#4CAF50',
-        fontWeight: '600' as const,
+
+    buttonText: {
+        color: "#FFFFFF",
+        fontSize: 17,
+        fontWeight: "700",
+    },
+
+    footer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+
+        marginTop: 25,
+    },
+
+    footerText: {
+        color: "#64748B",
+        fontSize: 15,
+    },
+
+    signIn: {
+        color: PRIMARY,
+        fontWeight: "700",
+        fontSize: 15,
+        marginLeft: 5,
     },
 });

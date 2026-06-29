@@ -68,6 +68,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             // In production, hash the password before storing
             // For now, storing as-is (UNSAFE - only for demo)
+            if (!phone) {
+                throw new Error('Phone number is required');
+            }
             const newUser = await userRepository.create({
                 name,
                 email: email.toLowerCase(),

@@ -1,29 +1,21 @@
-import { AuthProvider, useAuth } from '@/lib/context/AuthContext';
-import { DatabaseProvider } from '@/lib/database';
+import { AuthProvider } from '@/lib/context/AuthContext';
+import { DatabaseProvider } from '@/lib/context/DatabaseContext';
+import { db } from '@/lib/database';
 import { Slot } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function RootLayout() {
+  useEffect(() => {
+    db.initialize();
+  }, []);
   return (
-    <DatabaseProvider>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
-    </DatabaseProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <DatabaseProvider>
+        <AuthProvider>
+          <Slot />
+        </AuthProvider>
+      </DatabaseProvider>
+    </GestureHandlerRootView>
   );
-}
-
-function RootLayoutNav() {
-  const { isSignedIn, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#4CAF50" />
-      </View>
-    );
-  }
-
-  // Show auth screens if not signed in, otherwise show main app
-  return isSignedIn ? <Slot /> : <Slot />;
 }

@@ -6,7 +6,7 @@ export default function TabLayout() {
         <Tabs
             screenOptions={{
                 tabBarActiveTintColor: '#4CAF50',
-                headerShown: false, // The parent Drawer layout will handle the header
+                headerShown: false, // The parent Drawer will handle the header
             }}
         >
             <Tabs.Screen
@@ -24,13 +24,6 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="customers"
-                options={{
-                    title: 'Customers',
-                    tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
-                }}
-            />
-            <Tabs.Screen
                 name="inventory"
                 options={{
                     title: 'Inventory',
@@ -41,7 +34,9 @@ export default function TabLayout() {
                 name="more"
                 options={{
                     title: 'More',
-                    tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal-circle-outline" size={size} color={color} />,
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="ellipsis-horizontal-circle-outline" size={size} color={color} />
+                    ),
                 }}
             />
         </Tabs>

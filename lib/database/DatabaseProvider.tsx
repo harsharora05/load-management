@@ -1,55 +1,141 @@
 /**
- * Database Provider
- * React context for database initialization
+ * User Repository
+ * Minimal user database operations
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import db from './db';
+import { generateId, getCurrentTimestamp } from "../utils/helpers";
+import db from "./db";
+import { User } from "./schema";
 
-interface DatabaseContextType {
-    isReady: boolean;
-    error: string | null;
-}
 
-const DatabaseContext = createContext<DatabaseContextType>({
-    isReady: false,
-    error: null,
-});
 
-export function useDatabaseContext() {
-    return useContext(DatabaseContext);
-}
+class UserRepository {
+    private static instance: UserRepository;
 
-interface DatabaseProviderProps {
-    children: React.ReactNode;
-}
+    private constructor() { }
 
-export function DatabaseProvider({ children }: DatabaseProviderProps) {
-    const [isReady, setIsReady] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    static getInstance(): UserRepository {
+        if (!UserRepository.instance) {
+            UserRepository.instance = new UserRepository();
+        }
+        return UserRepository.instance;
+    }
 
-    useEffect(() => {
-        const initializeDatabase = async () => {
-            try {
-                await db.initialize();
-                setIsReady(true);
-            } catch (err) {
-                const errorMsg = String(err);
-                setError(errorMsg);
-                console.error('[DatabaseProvider] Initialization error:', err);
-            }
+    /**
+     * Create a new user
+     */
+    async create(
+        data: Omit<User, "id" | "createdAt" | "updatedAt">
+    ): Promise<User> {
+        const id = generateId();
+        const now = getCurrentTimestamp();
+
+        const user: User = {
+            ...data,
+            id,
+            email: data.email.toLowerCase(),
+            createdAt: now,
+            updatedAt: now,
         };
 
-        initializeDatabase();
+        await db.run(
+            `INSERT INTO users
+            (id, name, email, phone, password, createdAt, updatedAt)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+                user.id,
+                user.name,
+                user.email,
+                user.phone ?? "",
+                user.password!,
+                user.createdAt,
+                user.updatedAt,
+            ]
+        );
 
-        return () => {
-            db.close();
-        };
-    }, []);
+        return user;
+    }
 
-    return (
-        <DatabaseContext.Provider value={{ isReady, error }}>
-            {children}
-        </DatabaseContext.Provider>
-    );
+    /**
+     * Get user by email
+     */
+    async getByEmail(email: string): Promise<User | null> {
+        return await db.get<User>(
+            "SELECT * FROM users WHERE email = ?",
+            [email.toLowerCase()]
+        );
+    }
+
+    /**
+     * Get user by ID
+     */
+    async getById(id: string): Promise<User | null> {
+        return await db.get<User>(
+            "SELECT * FROM users WHERE id = ?",
+            [id]
+        );
+    }
+
+    /**
+     * Get all users
+     */
+    async getAll(): Promise<User[]> {
+        return await db.all<User>(
+            "SELECT * FROM users ORDER BY createdAt DESC"
+        );
+    }
+
+    /**
+     * Update user
+     */
+    async update(
+        id: string,
+        updates: Partial<Omit<User, "id" | "createdAt">>
+    ): Promise<User | null> {
+        const existing = await this.getById(id);
+
+        if (!existing) {
+            return null;
+        }
+
+        if (Object.keys(updates).length === 0) {
+            return existing;
+        }
+
+        const now = getCurrentTimestamp();
+
+        if (updates.email) {
+            updates.email = updates.email.toLowerCase();
+        }
+
+        const keys = Object.keys(updates);
+        const values = Object.values(updates);
+
+        const setClause = keys
+            .map((key) => `${key} = ?`)
+            .join(", ");
+
+        await db.run(
+            `UPDATE users
+             SET ${setClause}, updatedAt = ?
+             WHERE id = ?`,
+            [...values, now, id]
+        );
+
+        return await this.getById(id);
+    }
+
+    /**
+     * Delete user
+     */
+    async delete(id: string): Promise<boolean> {
+        const result = await db.run(
+            "DELETE FROM users WHERE id = ?",
+            [id]
+        );
+
+        return result.changes > 0;
+    }
 }
+
+export default UserRepository.getInstance();
