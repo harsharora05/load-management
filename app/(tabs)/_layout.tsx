@@ -1,35 +1,49 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
-    </Tabs>
-  );
+    return (
+        <Tabs
+            screenOptions={{
+                tabBarActiveTintColor: '#4CAF50',
+                headerShown: false, // The parent Drawer layout will handle the header
+            }}
+        >
+            <Tabs.Screen
+                name="index"
+                options={{
+                    title: 'Dashboard',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="grid-outline" size={size} color={color} />,
+                }}
+            />
+            <Tabs.Screen
+                name="journey"
+                options={{
+                    title: 'Journeys',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="map-outline" size={size} color={color} />,
+                }}
+            />
+            <Tabs.Screen
+                name="customers"
+                options={{
+                    title: 'Customers',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
+                }}
+            />
+            <Tabs.Screen
+                name="inventory"
+                options={{
+                    title: 'Inventory',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="cube-outline" size={size} color={color} />,
+                }}
+            />
+            <Tabs.Screen
+                name="more"
+                options={{
+                    title: 'More',
+                    tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal-circle-outline" size={size} color={color} />,
+                }}
+            />
+        </Tabs>
+    );
 }
